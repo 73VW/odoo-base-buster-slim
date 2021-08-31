@@ -1,0 +1,6 @@
+gunicorn
+greenlet
+eventlet
+gunicorn[eventlet]
+virtualenv
+cython
