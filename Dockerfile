@@ -1,13 +1,13 @@
 # syntax=docker/dockerfile:1
-FROM python:2.7.18-slim-buster as builder
+FROM python:2.7.18-slim-buster as Builder
 
 ENV WORKDIR="/opt/odoo"
 ENV VIRTUAL_ENV="$WORKDIR/venv"
 
 COPY stack-requirements.txt stack-requirements.txt
+COPY odoo-requirements.txt odoo-requirements.txt
 
 RUN apt-get update && apt-get install -y \
-    curl \
     gcc \
     git \
     libkeyutils-dev \
@@ -16,19 +16,26 @@ RUN apt-get update && apt-get install -y \
     libsasl2-dev \
     libssl-dev \
     linux-headers-amd64 \
-    npm \
-    node-less \
     python-psycopg2 \
     python2-dev \
-    rsync \
-    virtualenv 
+    virtualenv \
+    wget
 
 RUN virtualenv -p /usr/bin/python2.7 $VIRTUAL_ENV
 RUN $VIRTUAL_ENV/bin/pip install -r stack-requirements.txt 
+RUN $VIRTUAL_ENV/bin/pip install -r odoo-requirements.txt 
+RUN git clone https://github.com/odoo/odoo.git --branch=10.0 --depth=1
+RUN cd odoo && $VIRTUAL_ENV/bin/pip install .
+
 # https://stackoverflow.com/a/10739838/9395299
 RUN echo "/usr/local/lib/python2.7/lib-dynload" > $VIRTUAL_ENV/lib/python2.7/site-packages/path.pth 
 
-FROM python:2.7.18-slim-buster
+RUN adduser --disabled-password --gecos '' odoo  
+RUN mkdir -p /opt/odoo/current/ 
+RUN mkdir -p /opt/odoo/filestore
+RUN chown -R odoo:odoo /opt/odoo/
+
+FROM python:2.7.18-slim-buster as Image
 
 LABEL \
     maintainer="Mael Pedretti <mael.pedretti@vnv.ch>" \
@@ -40,11 +47,13 @@ ENV WORKDIR="/opt/odoo"
 ENV VIRTUAL_ENV="$WORKDIR/venv" \
     PATH="$WORKDIR/venv/bin:$PATH" 
 
-COPY --from=builder $WORKDIR $WORKDIR
-COPY --from=builder / /
+RUN adduser --disabled-password --gecos '' odoo \
+    && apt-get update && apt-get install -y --no-install-recommends\
+    git \
+    node-less \
+    python-psycopg2 \
+    wkhtmltopdf \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /var/log/odoo/ && chown -R odoo:odoo /var/log/odoo/
 
-RUN adduser --disabled-password --gecos '' odoo \ 
-    && mkdir -p /opt/odoo/current/ \
-    && chown -R odoo:odoo /opt/odoo/ \
-    && mkdir -p /var/log/gunicorn/ \
-    && chown -R odoo:odoo /var/log/gunicorn/
+COPY --from=Builder $WORKDIR $WORKDIR
