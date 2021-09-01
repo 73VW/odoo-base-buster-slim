@@ -10,11 +10,14 @@ RUN apt-get update && apt-get install -y \
     curl \
     gcc \
     git \
+    libkeyutils-dev \
     libldap2-dev \
     libpq-dev \
     libsasl2-dev \
     libssl-dev \
     linux-headers-amd64 \
+    npm \
+    node-less \
     python-psycopg2 \
     python2-dev \
     rsync \
@@ -38,7 +41,7 @@ ENV VIRTUAL_ENV="$WORKDIR/venv" \
     PATH="$WORKDIR/venv/bin:$PATH" 
 
 COPY --from=builder $WORKDIR $WORKDIR
-COPY --from=builder /usr /usr
+COPY --from=builder / /
 
 RUN adduser --disabled-password --gecos '' odoo \ 
     && mkdir -p /opt/odoo/current/ \
