@@ -24,5 +24,5 @@ Logs folder is supposed to be `/var/log/odoo/` and also belongs to `odoo`.
 
 You can simply use it in your dockerfile in the `FROM` clause:
 
-FROM maelpedretti/odoo-base-buster-slim:packed
+`FROM maelpedretti/odoo-base-buster-slim:packed`
 
