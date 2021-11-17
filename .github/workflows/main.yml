@@ -6,9 +6,11 @@ name: Docker Image CI
 on:
   # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches: [ packed ]
+    branches-ignore:
+      - main
   pull_request:
-    branches: [ packed ]
+    branches-ignore:
+      - '**'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -32,11 +34,11 @@ jobs:
         run: |
           echo "$DOCKER_PASSWORD" | docker login -u $DOCKER_USER --password-stdin
       - name: Build the Docker image
-        run: docker build -t ${{secrets.DOCKER_USER}}/odoo-base-buster-slim:packed .
+        run: docker build -t ${{secrets.DOCKER_USER}}/odoo-base-buster-slim:${GITHUB_REF##*/} .
 
       # Runs a single command using the runners shell
       - name: Docker push
-        run: docker push ${{secrets.DOCKER_USER}}/odoo-base-buster-slim:packed
+        run: docker push ${{secrets.DOCKER_USER}}/odoo-base-buster-slim:${GITHUB_REF##*/}
   notify-sucess:
     runs-on: ubuntu-latest
     needs: build
