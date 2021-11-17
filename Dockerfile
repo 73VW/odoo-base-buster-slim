@@ -54,6 +54,7 @@ ENV VIRTUAL_ENV="$WORKDIR/venv" \
 
 RUN adduser --disabled-password --gecos '' odoo \
     && apt-get update && apt-get install -y --no-install-recommends\
+    mupdf \
     node-less \
     python-lxml \
     python-psycopg2 \

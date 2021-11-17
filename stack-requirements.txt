@@ -1,5 +1,3 @@
-gevent==1.1.2
 gunicorn[gevent]
 virtualenv
-psycogreen==1.0
 cython
