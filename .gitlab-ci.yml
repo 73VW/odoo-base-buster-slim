@@ -1,0 +1,30 @@
+stages:
+  - build
+
+docker-build:
+  # Official docker image.
+  stage: build
+  rules:
+    - if: $CI_COMMIT_REF_SLUG == 'dev'
+      variables:
+        DOCKER_IMAGE_TAG: "latest"
+      when: always
+    - if: $CI_COMMIT_REF_SLUG != 'dev'
+      variables:
+        DOCKER_IMAGE_TAG: $CI_COMMIT_REF_SLUG
+      when: always
+    - when: never
+  variables:
+    DOCKER_REGISTRY_IMAGE: "$DOCKER_USER/$CI_PROJECT_NAME:$DOCKER_IMAGE_TAG"
+    container: docker                  
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  script:
+    - mkdir -p /kaniko/.docker
+    - mv $DOCKER_AUTH_CONFIG /kaniko/.docker/config.json
+    - >-
+      /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "${DOCKER_REGISTRY_IMAGE}"
