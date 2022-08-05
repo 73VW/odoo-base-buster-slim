@@ -22,6 +22,7 @@ RUN apt-get install -y python-pip
 RUN apt-get install -y python-psycopg2 
 RUN apt-get install -y python2-dev 
 RUN apt-get install -y virtualenv 
+RUN apt-get install -y wget
 RUN git clone https://github.com/odoo/odoo.git --branch=10.0 --depth=1
 
 
@@ -38,7 +39,8 @@ RUN echo "/usr/local/lib/python2.7/lib-dynload" > $VIRTUAL_ENV/lib/python2.7/sit
 RUN adduser --disabled-password --gecos '' odoo  
 RUN mkdir -p /opt/odoo/current/ 
 RUN mkdir -p /opt/odoo/filestore
-RUN chown -R odoo:odoo /opt/odoo/
+
+RUN wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.buster_amd64.deb --directory-prefix /opt/odoo/
 
 FROM python:2.7.18-slim-buster as image
 
@@ -52,15 +54,17 @@ ENV WORKDIR="/opt/odoo"
 ENV VIRTUAL_ENV="$WORKDIR/venv" \
     PATH="$WORKDIR/venv/bin:$PATH" 
 
-RUN adduser --disabled-password --gecos '' odoo \
-    && apt-get update && apt-get install -y --no-install-recommends\
+RUN adduser --disabled-password --gecos '' odoo
+
+COPY --chown=odoo:odoo --from=builder $WORKDIR $WORKDIR 
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    /opt/odoo/wkhtmltox_0.12.6-1.buster_amd64.deb \
     node-less \
     python-lxml \
     python-psycopg2 \
-    wkhtmltopdf \
+    && rm /opt/odoo/wkhtmltox_0.12.6-1.buster_amd64.deb \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false -o APT::AutoRemove::SuggestsImportant=false npm \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /var/log/odoo/ && chown -R odoo:odoo /var/log/odoo/ \
     && mkdir -p /var/odoo/ && chown -R odoo:odoo /var/odoo/
-
-COPY --from=builder $WORKDIR $WORKDIR
