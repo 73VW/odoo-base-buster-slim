@@ -44,11 +44,8 @@ RUN wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkh
 
 FROM python:2.7.18-slim-buster as image
 
-LABEL \
-    maintainer="Mael Pedretti <mael.pedretti@vnv.ch>" \
-    org.label-schema.name="Odoo Base (Buster-slim)"\
-    org.label-schema.schema-version="1.0" \
-    org.label-schema.version="1.0" 
+ARG BUILD_DATE
+ARG VCS_REF
 
 ENV WORKDIR="/opt/odoo"
 ENV VIRTUAL_ENV="$WORKDIR/venv" \
@@ -63,8 +60,42 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     node-less \
     python-lxml \
     python-psycopg2 \
+    net-tools \
+    wget \
     && rm /opt/odoo/wkhtmltox_0.12.6-1.buster_amd64.deb \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false -o APT::AutoRemove::SuggestsImportant=false npm \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /var/log/odoo/ && chown -R odoo:odoo /var/log/odoo/ \
     && mkdir -p /var/odoo/ && chown -R odoo:odoo /var/odoo/
+
+WORKDIR $WORKDIR
+
+USER odoo
+
+LABEL maintainer="VNV SA <web@vnv.ch>" \
+    python.version="2.7.18" \
+    os.architecture="amd64" \
+    org.label-schema.build-date=${BUILD_DATE} \
+    org.label-schema.schema-version="1.0" \
+    org.label-schema.url="https://git.vnv.ch/vnv/containers/odoo" \
+    org.label-schema.vcs-ref=${VCS_REF} \
+    org.label-schema.vcs-url="https://git.vnv.ch/vnv/containers/odoo" \
+    org.opencontainers.image.authors="Maël Pedretti <mael.pedretti@vnv.ch>" \
+    org.opencontainers.image.created=${BUILD_DATE} \
+    org.opencontainers.image.description="Odoo container for local development" \
+    org.opencontainers.image.licenses="MIT" \
+    org.opencontainers.image.revision="${VCS_REF}" \
+    org.opencontainers.image.source="https://git.vnv.ch/vnv/containers/odoo" \
+    org.opencontainers.image.title="Odoo" \
+    org.opencontainers.image.url="https://git.vnv.ch/vnv/containers/odoo" \
+    org.opencontainers.image.vendor="VNV SA <web@vnv.ch>"
+
+FROM image as debug
+
+RUN pip install debugpy
+
+ENV GEVENT_SUPPORT=True
+
+FROM image as profile
+
+RUN pip install blackfire

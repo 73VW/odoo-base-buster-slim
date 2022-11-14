@@ -1,7 +1,7 @@
 stages:
   - build
 
-docker-build:
+Build image:
   # Official docker image.
   stage: build
   rules:
@@ -14,17 +14,25 @@ docker-build:
         DOCKER_IMAGE_TAG: $CI_COMMIT_REF_SLUG
       when: always
     - when: never
+  parallel:
+    matrix:
+      - TAG_BASE:
+          - ""
+          - "debug"
+          - "profile"
   variables:
-    DOCKER_REGISTRY_IMAGE: "$DOCKER_USER/$CI_PROJECT_NAME:$DOCKER_IMAGE_TAG"
-    container: docker                  
+    container: docker
   image:
     name: gcr.io/kaniko-project/executor:debug
     entrypoint: [""]
   script:
+    - if [ ! -z "$TAG_BASE" ]; then DOCKER_IMAGE_TAG="$TAG_BASE-$DOCKER_IMAGE_TAG"; fi
+    - if [ -z "$TAG_BASE" ]; then COMPOSE_TARGET="image"; else COMPOSE_TARGET="$TAG_BASE"; fi
     - mkdir -p /kaniko/.docker
     - mv $DOCKER_AUTH_CONFIG /kaniko/.docker/config.json
     - >-
       /kaniko/executor
-      --context "${CI_PROJECT_DIR}"
-      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
-      --destination "${DOCKER_REGISTRY_IMAGE}"
+      --context "$CI_PROJECT_DIR"
+      --dockerfile "$CI_PROJECT_DIR/Dockerfile"
+      --destination "$DOCKER_USER/$CI_PROJECT_NAME:$DOCKER_IMAGE_TAG"
+      --target $COMPOSE_TARGET
