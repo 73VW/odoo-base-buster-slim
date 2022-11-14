@@ -25,7 +25,7 @@ RUN apt-get install -y virtualenv
 RUN apt-get install -y wget
 RUN git clone https://github.com/odoo/odoo.git --branch=10.0 --depth=1
 
-
+RUN pip install --upgrade pip
 RUN virtualenv -p /usr/bin/python2.7 $VIRTUAL_ENV
 COPY stack-requirements.txt stack-requirements.txt
 RUN $VIRTUAL_ENV/bin/pip install -r stack-requirements.txt

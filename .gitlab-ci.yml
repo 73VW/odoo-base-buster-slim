@@ -36,3 +36,5 @@ Build image:
       --dockerfile "$CI_PROJECT_DIR/Dockerfile"
       --destination "$DOCKER_USER/$CI_PROJECT_NAME:$DOCKER_IMAGE_TAG"
       --target $COMPOSE_TARGET
+      --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+      --build-arg VCS_REF="$CI_COMMIT_SHA"
