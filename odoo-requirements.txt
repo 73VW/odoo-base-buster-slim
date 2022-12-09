@@ -1,5 +1,4 @@
 # Copy of https://github.com/odoo/odoo/blob/10.0/requirements.txt
-# without lxml as it is intalled with apt (it was taking way too much time)
 Babel==2.3.4
 decorator==4.0.10
 docutils==0.12

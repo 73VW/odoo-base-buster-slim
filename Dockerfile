@@ -1,10 +1,11 @@
 # syntax=docker/dockerfile:1
-FROM python:2.7.18-buster as builder
+FROM debian:bullseye-slim as builder
 
 ENV WORKDIR="/opt/odoo"
 ENV VIRTUAL_ENV="$WORKDIR/venv"
 
 RUN apt-get update 
+RUN apt-get install -y python
 RUN apt-get install -y build-essential
 RUN apt-get install -y gcc
 RUN apt-get install -y git 
@@ -16,16 +17,16 @@ RUN apt-get install -y libsasl2-dev
 RUN apt-get install -y libssl-dev 
 RUN apt-get install -y libxml2-dev 
 RUN apt-get install -y libxslt-dev 
-RUN apt-get install -y linux-headers-amd64 
-RUN apt-get install -y python-lxml
-RUN apt-get install -y python-pip 
-RUN apt-get install -y python-psycopg2 
-RUN apt-get install -y python2-dev 
-RUN apt-get install -y virtualenv 
+RUN apt-get install -y linux-headers-amd64
+RUN apt-get install -y python-dev 
 RUN apt-get install -y wget
 RUN git clone https://github.com/odoo/odoo.git --branch=10.0 --depth=1
-
+RUN wget https://bootstrap.pypa.io/pip/2.7/get-pip.py --directory-prefix /opt/odoo/
+RUN python2 /opt/odoo/get-pip.py
+RUN pip --version
 RUN pip install --upgrade pip
+RUN pip install virtualenv
+
 RUN virtualenv -p /usr/bin/python2.7 $VIRTUAL_ENV
 COPY stack-requirements.txt stack-requirements.txt
 RUN $VIRTUAL_ENV/bin/pip install -r stack-requirements.txt
@@ -40,9 +41,9 @@ RUN adduser --disabled-password --gecos '' odoo
 RUN mkdir -p /opt/odoo/current/ 
 RUN mkdir -p /opt/odoo/filestore
 
-RUN wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.buster_amd64.deb --directory-prefix /opt/odoo/
+RUN wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6.1-2.bullseye_amd64.deb --directory-prefix /opt/odoo/
 
-FROM python:2.7.18-slim-buster as image
+FROM debian:bullseye-slim as image
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -56,13 +57,13 @@ RUN adduser --disabled-password --gecos '' odoo
 COPY --chown=odoo:odoo --from=builder $WORKDIR $WORKDIR 
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    /opt/odoo/wkhtmltox_0.12.6-1.buster_amd64.deb \
+    python \
+    /opt/odoo/wkhtmltox_0.12.6.1-2.bullseye_amd64.deb \
     node-less \
-    python-lxml \
-    python-psycopg2 \
     net-tools \
     wget \
-    && rm /opt/odoo/wkhtmltox_0.12.6-1.buster_amd64.deb \
+    && python2 /opt/odoo/get-pip.py \
+    && rm /opt/odoo/wkhtmltox_0.12.6.1-2.bullseye_amd64.deb \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false -o APT::AutoRemove::SuggestsImportant=false npm \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /var/log/odoo/ && chown -R odoo:odoo /var/log/odoo/ \
@@ -74,6 +75,7 @@ USER odoo
 
 LABEL maintainer="VNV SA <web@vnv.ch>" \
     python.version="2.7.18" \
+    debian.version="bullseye" \
     os.architecture="amd64" \
     org.label-schema.build-date=${BUILD_DATE} \
     org.label-schema.schema-version="1.0" \
